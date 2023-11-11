@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const encrypt = require('mongoose-encryption');
 
 
 const UserSchema = new Schema({
@@ -16,7 +15,6 @@ const UserSchema = new Schema({
 }, { timestamps: true});
 
 
-UserSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ['password']});
 
 const User = mongoose.model('users', UserSchema);
 
