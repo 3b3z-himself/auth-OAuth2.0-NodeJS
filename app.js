@@ -7,7 +7,7 @@ const md5 = require('md5');
 const session = require('express-session');
 const passport = require('passport');
 const passportLocalMongoose = require('passport-local-mongoose');
-
+const GitHubStrategy = require('passport-github2').Strategy;
 const app = express();
 
 app.use(express.static('public'));
@@ -15,7 +15,7 @@ app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use(bodyParser.json());
 app.use(session({
     secret: "My mystery secret bla bla bla",
     resave: false,
@@ -31,6 +31,41 @@ mongoose.connect(process.env.DB_URI)
     .then((result) => app.listen(3000))
     .catch(err => console.log('Error connecting', err));
 
+app.get('/auth/github',
+    passport.authenticate('github', { scope: [ 'user:email' ] }));
+  
+app.get('/auth/github/callback', 
+    passport.authenticate('github', { failureRedirect: '/login' }),
+    function(req, res) {
+      res.redirect('/secrets');
+    });
+
+passport.use(new GitHubStrategy({
+    clientID: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    callbackURL: "http://127.0.0.1:3000/auth/github/callback"
+    },
+    async (accessToken, refreshToken, profile, cb) => {
+        const user = await User.findOne({
+            accountID: profile.id,
+            provider: 'github'
+        });
+        if (!user){
+            console.log('Adding new github user to DB..');
+            const user = new User({
+                accountID: profile.id,
+                username: profile.username,
+                provider: profile.provider
+            });
+            await user.save();
+            return cb(null, profile);
+        }
+        else{
+            console.log('Github user already exists in database');
+            return cb(null, profile);
+        }
+    }
+));
 
 app.get('/', (req, res) => {
     res.render('home')
@@ -71,7 +106,7 @@ app.post('/register', async (req, res) => {
 
 
 
-    
+
 app.post('/login', function(req, res) {
     const user = new User({
         username: req.body.username,

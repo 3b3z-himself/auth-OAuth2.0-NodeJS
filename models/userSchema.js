@@ -5,9 +5,10 @@ const passportLocalMongoose = require('passport-local-mongoose');
 
 
 const UserSchema = new Schema({
+    accountID: String,
     username: String,
-    password: String
-
+    password: String,
+    provider: String
 }, { timestamps: true});
 
 
@@ -15,6 +16,11 @@ const UserSchema = new Schema({
 UserSchema.plugin(passportLocalMongoose);
 const User = mongoose.model('users', UserSchema);
 // passport.use(User.createStrategy())
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+passport.serializeUser(function(user, done) {
+    done(null, user);
+  });
+  
+  passport.deserializeUser(function(obj, done) {
+    done(null, obj);
+  });
 module.exports = User;
