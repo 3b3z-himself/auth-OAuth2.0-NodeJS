@@ -80,18 +80,72 @@ app.get('/register', (req, res) => {
     res.render('register')
 })
 
-app.get('/secrets', (req, res) => {
+app.get('/secrets', async (req, res) =>  {
     if (req.isAuthenticated()) {
-        res.render('secrets');
+        const secrets = await User.find({}, { msg: 1 });
+        const secretValues = secrets.map(secret => secret.msg);
+        console.log(secretValues)
+        res.render('secrets', {secrets: secretValues});
     }else{
         res.redirect('/login')
     }
 })
 
+app.get('/submit', (req, res) => {
+    if (req.isAuthenticated()) {
+        res.render('submit');
+    }else{
+        res.redirect('/login')
+    }
+})
+
+app.post('/submit', (req, res) => {
+    submittedMSG = req.body.secret
+    console.log(req.user)
+    if (req.user.provider === 'local'){
+        User.findById(req.user.id).then(user => {
+            if (!user) {
+                // Handle user not found error
+            } else {
+                // Update user's message
+                user.msg = submittedMSG;
+        
+                // Save updated user
+                user.save().then(() => {
+                    res.redirect('/secrets');
+                }).catch(err => {
+                    console.error(err);
+                });
+            }
+        }).catch(err => {
+            console.error(err);
+        });
+    } 
+    else{
+        User.findByUsername(req.user.username).then(user => {
+            if (!user) {
+                // Handle user not found error
+            } else {
+                // Update user's message
+                user.msg = submittedMSG;
+        
+                // Save updated user
+                user.save().then(() => {
+                    res.redirect('/secrets');
+                }).catch(err => {
+                    console.error(err);
+                });
+            }
+        }).catch(err => {
+            console.error(err);
+        });
+    }
+    
+});
 
 app.post('/register', async (req, res) => {
     
-    User.register(new User({ username: req.body.username }), req.body.password, function (err, user) {
+    User.register(new User({ username: req.body.username, provider: "local" }), req.body.password, function (err, user) {
         if (err) {
             console.log(err);
             res.redirect('/register');
@@ -112,7 +166,7 @@ app.post('/login', function(req, res) {
         username: req.body.username,
         password: req.body.password
     });
-    req.login(user, function(err, res){
+    req.login(user, function(err, res2){
         if(err){
             console.log(err)
         } else{
@@ -125,6 +179,10 @@ app.post('/login', function(req, res) {
 
 
 app.get('/logout', function(req, res){
-    req.logout();
-    res.redirect('/')
+    req.logout(function(err) {
+        if (err) {
+            console.log(err)
+        }
+        res.redirect('/');
+    });
 });

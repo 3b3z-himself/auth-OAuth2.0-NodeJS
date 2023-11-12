@@ -8,7 +8,8 @@ const UserSchema = new Schema({
     accountID: String,
     username: String,
     password: String,
-    provider: String
+    provider: String,
+    msg: String
 }, { timestamps: true});
 
 
