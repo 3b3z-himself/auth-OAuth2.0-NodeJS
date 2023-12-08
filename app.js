@@ -82,6 +82,7 @@ app.get('/register', (req, res) => {
 
 app.get('/secrets', async (req, res) =>  {
     if (req.isAuthenticated()) {
+        console.log(req.user)
         const secrets = await User.find({}, { msg: 1 });
         const secretValues = secrets.map(secret => secret.msg);
         console.log(secretValues)
